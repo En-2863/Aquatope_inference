@@ -1,4 +1,4 @@
-#### This repo is adapted from AQUATOPE project.
+#### This repo is adapted from AQUATOPE https://github.com/zzhou612/aquatope project.
 
 model_artifacts/: folder for saving the models, including lstm_encoder_decoder.pt and predict.pt
 models/: files for building the model architecture
