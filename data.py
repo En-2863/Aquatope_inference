@@ -86,61 +86,62 @@ def get_dataloaders(datasets: dict, train_batch_size: int) -> dict:
 
 
 def pipeline(n_input_steps: int, n_pred_steps: int,
-             hash_function: str,
-             dataset_dir: str,
-             num_days: int) -> Tuple[pd.DataFrame, dict, dict]:
-    df = load_dataset(hash_function=hash_function, dataset_dir=dataset_dir,
-                      num_days=num_days)
+             trace: np.ndarray,
+             period: int,
+             interval: int) -> Tuple[pd.DataFrame, dict, dict]:
+    df = load_dataset(trace=trace,
+                      period=period, interval=interval)
     split_dfs = split_dataframe(df)
     samples = create_samples(split_dfs, n_input_steps, n_pred_steps)
 
     return df, split_dfs, samples
 
 
-def full_pipeline(params):
-    # run the data preprocessing pipeline to create dataset
-    df, split_dfs, samples = pipeline(
-        n_input_steps=params['data']['n_input_steps'],
-        n_pred_steps=params['models']['prediction']['n_output_steps'],
-        dataset_dir='../data')
+# def full_pipeline(params):
+#     # run the data preprocessing pipeline to create dataset
+#     df, split_dfs, samples = pipeline(
+#         n_input_steps=params['data']['n_input_steps'],
+#         n_pred_steps=params['models']['prediction']['n_output_steps'],
+#         dataset_dir='../data')
+# 
+#     # we modify the get_datasets function to return external features in the y labels
+#     datasets = get_datasets(
+#         samples, params['data']['n_input_steps'], pretraining=False)
+# 
+#     dataloaders = get_dataloaders(datasets, train_batch_size=256)
+# 
+#     return df, dataloaders
 
-    # we modify the get_datasets function to return external features in the y labels
-    datasets = get_datasets(
-        samples, params['data']['n_input_steps'], pretraining=False)
 
-    dataloaders = get_dataloaders(datasets, train_batch_size=256)
-
-    return df, dataloaders
-
-
-def load_dataset(hash_function: str,
-                 dataset_dir: str,
-                 num_days: int) -> pd.DataFrame:
-    df = pd.DataFrame(columns=['invocation_rate'], dtype=np.float64)
-    for day in range(1, num_days + 1):
-        invocations_per_function = dataset_dir + \
-            'invocations_per_function_md.anon.d0' + str(day) + '.csv'
-        df_t = pd.read_csv(invocations_per_function)
-        hash_function_df = df_t[df_t['HashFunction'] == hash_function]
-        values_list = hash_function_df.values.flatten().tolist()[4:]
-        df_t = pd.DataFrame(values_list, columns=[
-                            'invocation_rate'], dtype=np.float64)
-        df = pd.concat([df, df_t], ignore_index=True)
-
-    start_t = pd.Timestamp('2021-01-01 00:00:00')
-    end_t = pd.Timestamp('2021-01-01 23:59:00') + \
-        pd.Timedelta(days=num_days - 1)
-    t = pd.date_range(start=start_t,
-                      end=end_t,
-                      freq='min')
-    df['date'] = t
-    df = df.set_index('date')
-    hour_of_day_sin = np.sin(2 * np.pi * (df.index.hour.values / 24))
-    hour_of_day_cos = np.cos(2 * np.pi * (df.index.hour.values / 24))
+def load_dataset(trace: np.ndarray, period: int, interval: int) -> pd.DataFrame:
+    #df = pd.DataFrame(columns=['invocation_rate'], dtype=np.float64)
+    #for day in range(1, num_days + 1):
+    #    invocations_per_function = dataset_dir + \
+    #        'invocations_per_function_md.anon.d0' + str(day) + '.csv'
+    #    df_t = pd.read_csv(invocations_per_function)
+    #    hash_function_df = df_t[df_t['HashFunction'] == hash_function]
+    #    values_list = hash_function_df.values.flatten().tolist()[4:]
+    #    df_t = pd.DataFrame(values_list, columns=[
+    #                        'invocation_rate'], dtype=np.float64)
+    #    df = pd.concat([df, df_t], ignore_index=True)
+    df = pd.DataFrame(trace, columns=['invocation_rate'], dtype=np.float64)
+    # start_t = pd.Timestamp('2021-01-01 00:00:00')
+    # end_t = pd.Timestamp('2021-01-01 23:59:00') + \
+    #     pd.Timedelta(days=num_days - 1)
+    # t = pd.date_range(start=start_t,
+    #                   end=end_t,
+    #                   freq='min')
+    # df['date'] = t
+    # df = df.set_index('date')
+    sequence = np.arange(0, len(trace))
+    period_t = np.array(sequence % (period * interval) / interval, dtype=np.int64)
+    interval_t = sequence % interval
+    hour_of_day_sin = np.sin(2 * np.pi * period_t / period)
+    hour_of_day_cos = np.cos(2 * np.pi * period_t / period)
     df['hour_of_day_sin'] = hour_of_day_sin
     df['hour_of_day_cos'] = hour_of_day_cos
-    day_of_week_sin = np.sin(2 * np.pi * (df.index.isocalendar().day / 7))
-    day_of_week_cos = np.cos(2 * np.pi * (df.index.isocalendar().day / 7))
+    day_of_week_sin = np.sin(2 * np.pi * interval_t / interval)
+    day_of_week_cos = np.cos(2 * np.pi * interval_t / interval)
     df['day_of_week_sin'] = day_of_week_sin
     df['day_of_week_cos'] = day_of_week_cos
 

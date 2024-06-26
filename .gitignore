@@ -1,3 +1,5 @@
 full_inference.py
 scheduler.py
 model_artifacts/
+data/
+generate_data.py

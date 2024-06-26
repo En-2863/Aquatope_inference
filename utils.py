@@ -192,17 +192,19 @@ def read_json_params(path):
     return params
 
 
-def time_emdedding(x, period, interval, days=7):
+def time_emdedding(period, interval, input_length=None):
     # period: 7 for week, 24 for hour 
     # interval: 24 for hour, 60 for minute
-    input_length = x.shape[0]
-    period_embedding = np.array([math.floor(i / input_length * days)  
+    if input_length is None:
+        input_length = period * interval
+
+    period_embedding = np.array([math.floor(i / input_length * period)  
                                  for i in range(input_length)])
     interval_embedding = np.array([i % interval for i in range(input_length)])
     period_embedding_sin = np.sin(2 * np.pi * period_embedding / period)
     period_emdedding_cos = np.cos(2 * np.pi * period_embedding / period)
     interval_embedding_sin = np.sin(2 * np.pi * interval_embedding / interval)
     interval_embedding_cos = np.cos(2 * np.pi * interval_embedding / interval)
-    x = np.vstack([x, period_embedding_sin, period_emdedding_cos, 
-                   interval_embedding_sin, interval_embedding_cos]).T
-    return x
+
+    return np.vstack([period_embedding_sin, period_emdedding_cos, 
+                      interval_embedding_sin, interval_embedding_cos]).T

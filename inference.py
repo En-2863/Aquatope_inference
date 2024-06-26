@@ -89,7 +89,8 @@ def trace_inference(trace=None,
     trace_mu = np.mean(trace)
     trace_sigma = np.std(trace)
     trace = (trace - trace_mu) / trace_sigma
-    trace_with_time_embedding = utils.time_emdedding(trace, period, interval, days)
+    time_embedding = utils.time_emdedding(period, interval, trace.shape[0])
+    trace_with_time_embedding = np.concatenate((trace, time_embedding), axis=1)
     
     time_steps = max_time_length - n_input_steps
     trace_predict = trace_with_time_embedding.copy()
