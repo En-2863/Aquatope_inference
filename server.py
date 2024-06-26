@@ -48,7 +48,6 @@ class AquatopeServer():
                 content = json.loads(line)
                 
                 try:
-                    content = json.loads('{"model_path": "./model_artifacts/predict.pt", "input_data": [5148, 3214, 2973, 2973, 10000, 6165, 2433, 5312, 4299, 465, 1444, 4530, 9388, 2994, 2276, 3901, 2162, 2834, 3547, 1377, 6387, 1151, 1017, 4159, 6050, 4082, 3273, 2812, 2452, 7393, 4562, 2618, 2015, 5565, 7276, 6842, 1723, 2793, 2412, 3093, 6347, 8822, 4685, 2075, 3486, 9920, 3832, 2817], "cur_time": 0}')
                     model_path = content.get("model_path", None)
                     input_data = content.get("input_data", None)
                     cur_time = content.get("cur_time", None)
